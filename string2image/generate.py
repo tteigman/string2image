@@ -35,11 +35,11 @@ class Generator(object):
         right = self._random_data([left.label])
         return DataPair(left=left, right=right, is_match=False)
 
-    def random_pair_gen(self, cnt, is_match=None, reverse=True):
+    def random_pair_gen(self, cnt, is_match=None, include_reverse=False):
         for _ in range(cnt):
             choose = choose = random() < 0.5 if is_match is None else is_match
             r = self._random_true() if choose else self._random_false()
             yield r
-            if reverse:
+            if include_reverse:
                 yield DataPair(left=r.right, right=r.left, is_match=r.is_match)
 
