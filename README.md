@@ -5,5 +5,5 @@ This repository contains a notebook demo on encoding strings as images using the
 https://www.intel.com/content/www/us/en/artificial-intelligence/documents/stamina-deep-learning-for-malware-protection-whitepaper.html
 
 ## Use cases
-- Data cleansing by detecting strings in a data field that are out of place (and/or putting them in place)
+- Data cleansing by detecting strings in a data field that are out of place (and putting them in place)
 - Domain specific fuzzy string matching 
