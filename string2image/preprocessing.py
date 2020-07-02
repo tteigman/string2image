@@ -3,7 +3,6 @@ from itertools import chain, combinations, product
 from random import shuffle
 import numpy as np
 import pandas as pd
-from gensim.models import Word2Vec
 from PIL import Image
 
 
