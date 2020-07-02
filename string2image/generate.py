@@ -1,6 +1,7 @@
-from random import randrange, random
+from random import randrange, random, choice
 import pandas as pd
 from collections import namedtuple
+from itertools import chain
 
 Data = namedtuple("Data", ["label", "value"])
 DataPair = namedtuple("DataPair", ["left", "right", "is_match"])
@@ -12,7 +13,7 @@ class Generator(object):
         self.total = len(self.data_funcs)
         self.data_funcs_dict = {f.__name__: f for f in self.data_funcs}
 
-    def _random_data(self, exclude=[]):
+    def random_data(self, exclude=[]):
         func_list = [f for f in self.data_funcs if f.__name__ not in exclude]
         total = len(func_list)
         ind = randrange(0, total)
@@ -22,24 +23,43 @@ class Generator(object):
 
     def random_data_gen(self, cnt):
         for _ in range(cnt):
-            yield self._random_data()
+            yield self.random_data()
 
-    def _random_true(self):
-        left = self._random_data()
+    def random_true(self):
+        left = self.random_data()
         right_func = self.data_funcs_dict[left.label]
         right = Data(label=right_func.__name__, value=right_func())
         return DataPair(left=left, right=right, is_match=True)
 
-    def _random_false(self):
-        left = self._random_data()
-        right = self._random_data([left.label])
+    def random_false(self):
+        left = self.random_data()
+        right = self.random_data([left.label])
         return DataPair(left=left, right=right, is_match=False)
 
     def random_pair_gen(self, cnt, is_match=None, include_reverse=False):
         for _ in range(cnt):
             choose = choose = random() < 0.5 if is_match is None else is_match
-            r = self._random_true() if choose else self._random_false()
+            r = self.random_true() if choose else self.random_false()
             yield r
             if include_reverse:
                 yield DataPair(left=r.right, right=r.left, is_match=r.is_match)
+
+
+class GenerateFromPairs(Generator):
+    def __init__(self, data_pairs):
+        self.data_pairs = data_pairs
+
+    def random_data(self):
+        return choice(choice(self.data_pairs))
+
+    def random_true(self):
+        chosen = choice(self.data_pairs)
+        return DataPair(left=chosen[0], right=chosen[1], is_match=True)
+
+    def random_false(self):
+        left, right = ("", ""), ("", "")
+        while left == right:
+            left = choice(self.data_pairs)
+            right = choice(self.data_pairs)
+        return DataPair(left=left[0], right=right[1], is_match=False)
 
