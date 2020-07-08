@@ -1,25 +1,27 @@
 from random import randrange, random, choice
 import pandas as pd
 from collections import namedtuple
-from itertools import chain
 
-Data = namedtuple("Data", ["label", "value"])
-DataPair = namedtuple("DataPair", ["left", "right", "is_match"])
+Data = namedtuple("Data", ["value", "label"])
+fields = ("left_value", "right_value", "pair_type", "is_match")
+DataPair = namedtuple("DataPair", fields, defaults=(None,) * len(fields),)
 
 
 class Generator(object):
     def __init__(self, data_funcs):
         self.data_funcs = data_funcs
         self.total = len(self.data_funcs)
-        self.data_funcs_dict = {f.__name__: f for f in self.data_funcs}
+        self.labels = [f.__name__ for f in data_funcs]
+        self.data_funcs_dict = {i: f for i, f in enumerate(self.data_funcs)}
 
     def random_data(self, exclude=[]):
         func_list = [f for f in self.data_funcs if f.__name__ not in exclude]
         total = len(func_list)
         ind = randrange(0, total)
         f = func_list[ind]
-        data = str(f())
-        return Data(label=f.__name__, value=data)
+        value = str(f())
+        label = self.labels.index(f.__name__)
+        return Data(value=value, label=label)
 
     def random_data_gen(self, cnt):
         for _ in range(cnt):
@@ -27,14 +29,25 @@ class Generator(object):
 
     def random_true(self):
         left = self.random_data()
-        right_func = self.data_funcs_dict[left.label]
-        right = Data(label=right_func.__name__, value=right_func())
-        return DataPair(left=left, right=right, is_match=True)
+        right = self.random_data([left.label])
+        pair_type = f"{self.labels[left.label]}-{self.labels[right.label]}"
+        return DataPair(
+            left_value=left.value,
+            right_value=right.value,
+            pair_type=pair_type,
+            is_match=True,
+        )
 
     def random_false(self):
         left = self.random_data()
         right = self.random_data([left.label])
-        return DataPair(left=left, right=right, is_match=False)
+        pair_type = f"{self.labels[left.label]}-{self.labels[right.label]}"
+        return DataPair(
+            left_value=left.value,
+            right_value=right.value,
+            pair_type=pair_type,
+            is_match=False,
+        )
 
     def random_pair_gen(self, cnt, is_match=None, include_reverse=False):
         for _ in range(cnt):
@@ -42,7 +55,13 @@ class Generator(object):
             r = self.random_true() if choose else self.random_false()
             yield r
             if include_reverse:
-                yield DataPair(left=r.right, right=r.left, is_match=r.is_match)
+                pair_type = "-".join(reversed(r.pair_type.split("-")))
+                yield DataPair(
+                    left_value=r.right_value,
+                    right_value=r.left_value,
+                    pair_type=pair_type,
+                    is_match=r.is_match,
+                )
 
 
 class GenerateFromPairs(Generator):
@@ -54,7 +73,7 @@ class GenerateFromPairs(Generator):
 
     def random_true(self):
         chosen = choice(self.data_pairs)
-        return DataPair(left=chosen[0], right=chosen[1], is_match=True)
+        return DataPair(left_value=chosen[0], right_value=chosen[1], is_match=True)
 
     def random_false(self):
         left, right = ("", ""), ("", "")
